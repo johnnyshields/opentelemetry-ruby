@@ -40,7 +40,10 @@ module OpenTelemetry
           end
 
           def succeeded(event)
-            finish_event('succeeded', event)
+            finish_event('succeeded', event) do |span|
+              n = event.reply.fetch('n', nil)
+              span.set_attribute('mongo.n', n) unless n.nil?
+            end
           end
 
           private
@@ -72,7 +75,9 @@ module OpenTelemetry
               'db.operation' => event.command_name,
               'db.statement' => CommandSerializer.new(event.command).serialize,
               'net.peer.name' => event.address.host,
-              'net.peer.port' => event.address.port
+              'net.peer.port' => event.address.port,
+              'mongo.request_id' => event.request_id,
+              'mongo.op_id' => event.operation_id
             }
           end
 
