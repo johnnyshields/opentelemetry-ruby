@@ -193,4 +193,33 @@ describe OpenTelemetry::Instrumentation::DelayedJob::Middlewares::TracerMiddlewa
       end
     end
   end
+
+  describe 'execute callback' do
+    let(:worker) do
+      OpenStruct.new(name: 'foo')
+    end
+
+    it 'execution callback yields control' do
+      result = nil
+      Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do |b|
+        result = b
+      end
+      _(result).must_equal worker
+    end
+
+    it 'flush happens after yielding' do
+      flush_called = nil
+      tracer_mock = MiniTest::Mock.new
+      tracer_mock.expect(:flush, nil) { flush_called = true }
+
+      instrumentation.stub(:tracer, tracer_mock) do
+        Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do
+          assert_nil flush_called
+        end
+        assert flush_called
+      end
+
+      tracer_mock.verify
+    end
+  end
 end

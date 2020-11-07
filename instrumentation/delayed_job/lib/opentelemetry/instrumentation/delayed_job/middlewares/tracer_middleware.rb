@@ -39,6 +39,12 @@ module OpenTelemetry
               end
             end
 
+            def flush(worker, &_block)
+              yield worker
+
+              tracer.flush if enabled? && tracer.respond_to?(:flush)
+            end
+
             protected
 
             def build_attributes(job)
@@ -82,6 +88,7 @@ module OpenTelemetry
           callbacks do |lifecycle|
             lifecycle.around(:enqueue, &method(:instrument_enqueue))
             lifecycle.around(:invoke_job, &method(:instrument_invoke))
+            lifecycle.around(:execute, &method(:flush))
           end
         end
       end

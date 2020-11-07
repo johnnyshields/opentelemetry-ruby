@@ -41,6 +41,14 @@ module OpenTelemetry
           @mutex.synchronize { @registry[Key.new(name, version)] ||= Tracer.new(name, version, self) }
         end
 
+        # Export all ended spans to the configured {SpanProcessor} that
+        # have not yet been exported.
+        #
+        # This operation will block until all the Spans are processed.
+        def flush
+          @mutex.synchronize { @active_span_processor.force_flush }
+        end
+
         # Attempts to stop all the activity for this {Tracer}. Calls
         # SpanProcessor#shutdown for all registered SpanProcessors.
         #
