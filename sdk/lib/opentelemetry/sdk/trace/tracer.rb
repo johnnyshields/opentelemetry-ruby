@@ -51,6 +51,10 @@ module OpenTelemetry
           internal_create_span(result, name, kind, trace_id, parent_span_id, attributes, links, start_timestamp, tracestate, with_parent)
         end
 
+        def shutdown
+          tracer_provider&.shutdown
+        end
+
         private
 
         def internal_create_span(result, name, kind, trace_id, parent_span_id, attributes, links, start_timestamp, tracestate, parent_context) # rubocop:disable Metrics/AbcSize

@@ -194,28 +194,32 @@ describe OpenTelemetry::Instrumentation::DelayedJob::Middlewares::TracerMiddlewa
     end
   end
 
-  # TODO: do we need to call #shutdown??
-  # describe 'execute callback' do
-  #   let(:worker) { double(:worker, name: 'worker') }
-  #
-  #   before do
-  #     allow(exporter).to receive(:shutdown).and_call_original
-  #   end
-  #
-  #   it 'execution callback yields control' do
-  #     result = nil
-  #     Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do |b|
-  #       result = b
-  #     end
-  #     _(result).must_equal worker
-  #   end
-  #
-  #   it 'shutdown happens after yielding' do
-  #     Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do
-  #       expect(exporter).not_to have_received(:shutdown)
-  #     end
-  #
-  #     expect(exporter).to have_received(:shutdown)
-  #   end
-  # end
+  describe 'execute callback' do
+    let(:worker) do
+      OpenStruct.new(name: 'foo')
+    end
+
+    it 'execution callback yields control' do
+      result = nil
+      Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do |b|
+        result = b
+      end
+      _(result).must_equal worker
+    end
+
+    it 'shutdown happens after yielding' do
+      shutdown_called = nil
+      tracer_mock = MiniTest::Mock.new
+      tracer_mock.expect(:shutdown, nil) { shutdown_called = true }
+
+      instrumentation.stub(:tracer, tracer_mock) do
+        Delayed::Worker.lifecycle.run_callbacks(:execute, worker) do
+          assert_nil shutdown_called
+        end
+        assert shutdown_called
+      end
+
+      tracer_mock.verify
+    end
+  end
 end

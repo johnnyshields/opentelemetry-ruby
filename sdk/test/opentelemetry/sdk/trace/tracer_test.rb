@@ -307,6 +307,16 @@ describe OpenTelemetry::SDK::Trace::Tracer do
     end
   end
 
+  describe '#shutdown' do
+    it 'calls shutdown on the tracer_provider' do
+      shutdown_called = nil
+      tracer_provider.stub(:shutdown, -> { shutdown_called = true }) do
+        tracer.shutdown
+      end
+      assert shutdown_called
+    end
+  end
+
   def activate_trace_config(trace_config)
     tracer_provider.active_trace_config = trace_config
   end
